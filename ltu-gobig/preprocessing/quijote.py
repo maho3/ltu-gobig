@@ -31,7 +31,7 @@ def load_halos(source_dir, simnum, redshift):
     # get the properties of the halos
     pos_h = FoF.GroupPos/1e3             #Halo positions in Mpc/h
     mass  = np.log10(FoF.GroupMass*1e10) #Halo masses in Msun/h
-    vel_h = FoF.GroupVel  #Halo peculiar velocities in km/s. Note Pylians usually adds (1.0+redshift) here
+    vel_h = FoF.GroupVel * (1.0 + redshift)  #Halo peculiar velocities in km/s
     
     return pos_h, vel_h, mass
 
