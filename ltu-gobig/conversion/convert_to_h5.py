@@ -64,7 +64,9 @@ def convert_nbody():
         os.remove(filename)
 
 
-if not isfile(join(simpath, 'nbody.h5')):
+oldfile = join(simpath, 'rho.npy')
+newfile = join(simpath, 'nbody.h5')
+if (not isfile(newfile)) and isfile(oldfile):
     print('Converting nbody')
     convert_nbody()
 
@@ -89,7 +91,9 @@ def convert_halos():
             os.remove(join(simpath, 'halo_cuboid_vel.npy'))
 
 
-if not isfile(join(simpath, 'halos.h5')):
+oldfile = join(simpath, 'halo_pos.npy')
+newfile = join(simpath, 'halos.h5')
+if (not isfile(newfile)) and isfile(oldfile):
     print('Converting halos')
     convert_halos()
 
@@ -115,8 +119,11 @@ def convert_galaxies(i):
 
 
 for i in range(5):
-    print(f'Converting galaxies {i}')
-    convert_galaxies(i)
+    oldfile = join(simpath, 'hod', f'hod{i}_pos.npy')
+    newfile = join(simpath, 'galaxies', f'hod{i:03}.h5')
+    if (not isfile(newfile)) and isfile(oldfile):
+        print(f'Converting galaxies {i}')
+        convert_galaxies(i)
 if del_old and os.path.isdir(join(simpath, 'hod')):
     os.rmdir(join(simpath, 'hod'))
 
@@ -137,7 +144,10 @@ def convert_lightcone(i):
 
 
 for i in range(5):
-    print(f'Converting lightcone {i}')
-    convert_lightcone(i)
+    oldfile = join(simpath, 'obs', f'rdz{i}.npy')
+    newfile = join(simpath, 'lightcone', f'hod{i:03}_aug{0:03}.h5')
+    if (not isfile(newfile)) and isfile(oldfile):
+        print(f'Converting lightcone {i}')
+        convert_lightcone(i)
 if del_old and os.path.isdir(join(simpath, 'obs')):
     os.rmdir(join(simpath, 'obs'))
