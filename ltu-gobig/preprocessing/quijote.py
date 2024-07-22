@@ -16,8 +16,8 @@ def load_halos(source_dir, simnum, redshift):
         
     Returns:
         :pos_h (np.ndarry): Halo positions in Mpc/h. Shape = (nhalos, 3).
-        :pos_v (np.ndarry): Halo peculiar velocities in km/s. Shape = (nhalos, 3).
-        :mass (np.ndarry): Halo masses in Msun/h. Shape = (nhalos,).
+        :vel_h (np.ndarry): Halo peculiar velocities in km/s. Shape = (nhalos, 3).
+        :mass (np.ndarry): log10(Halo masses in Msun/h). Shape = (nhalos,).
         
     """
     z_dict = {0.0:4, 0.5:3, 1.0:2, 2.0:1, 3.0:0}
