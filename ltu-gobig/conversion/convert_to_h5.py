@@ -2,6 +2,7 @@
 established in the merge of the enforce_hdf5 branch.
 """
 
+import shutil
 import os
 from os.path import join, isfile
 import numpy as np
@@ -69,6 +70,32 @@ newfile = join(simpath, 'nbody.h5')
 if (not isfile(newfile)) and isfile(oldfile):
     print('Converting nbody')
     convert_nbody()
+else:
+    print('nbody already converted')
+
+
+# convert bias models
+def convert_bias():
+    from cmass.bias.fit_halo_bias import save_bias
+
+    if isfile(join(simpath, 'halo_bias.npy')):
+        medges = np.load(join(simpath, 'halo_medges.npy'))
+        popt = np.load(join(simpath, 'halo_bias.npy'))
+        save_bias(simpath, cfg.nbody.af, medges, popt)
+
+        if del_old:
+            print('Deleting old bias')
+            os.remove(join(simpath, 'halo_medges.npy'))
+            os.remove(join(simpath,  'halo_bias.npy'))
+
+
+oldfile = join(simpath, 'halo_bias.npy')
+newfile = join(simpath, 'bias.h5')
+if (not isfile(newfile)) and isfile(oldfile):
+    print('Converting bias')
+    convert_bias()
+else:
+    print('bias already converted')
 
 
 # convert halos
@@ -96,6 +123,8 @@ newfile = join(simpath, 'halos.h5')
 if (not isfile(newfile)) and isfile(oldfile):
     print('Converting halos')
     convert_halos()
+else:
+    print('halos already converted')
 
 
 # convert galaxies
@@ -104,8 +133,11 @@ def convert_galaxies(i):
     if isfile(join(simpath, 'hod', f'hod{i}_pos.npy')):
         hpos = np.load(join(simpath, 'hod', f'hod{i}_pos.npy'))
         hvel = np.load(join(simpath, 'hod', f'hod{i}_vel.npy'))
-        hmeta = np.load(
-            join(simpath, 'hod', f'hod{i}_meta.npz'), allow_pickle=True)
+        if isfile(join(simpath, 'hod', f'hod{i}_meta.npz')):
+            hmeta = np.load(
+                join(simpath, 'hod', f'hod{i}_meta.npz'), allow_pickle=True)
+        else:
+            hmeta = {}
 
         os.makedirs(join(simpath, 'galaxies'), exist_ok=True)
         savepath = join(simpath, 'galaxies', f'hod{i:03}.h5')
@@ -115,10 +147,11 @@ def convert_galaxies(i):
             print(f'Deleting old galaxies {i}')
             os.remove(join(simpath, 'hod', f'hod{i}_pos.npy'))
             os.remove(join(simpath, 'hod', f'hod{i}_vel.npy'))
-            os.remove(join(simpath, 'hod', f'hod{i}_meta.npz'))
+            if isfile(join(simpath, 'hod', f'hod{i}_meta.npz')):
+                os.remove(join(simpath, 'hod', f'hod{i}_meta.npz'))
 
 
-for i in range(5):
+for i in range(10):
     oldfile = join(simpath, 'hod', f'hod{i}_pos.npy')
     newfile = join(simpath, 'galaxies', f'hod{i:03}.h5')
     if (not isfile(newfile)) and isfile(oldfile):
@@ -143,11 +176,51 @@ def convert_lightcone(i):
             os.remove(join(simpath, 'obs', f'rdz{i}.npy'))
 
 
-for i in range(5):
+for i in range(10):
     oldfile = join(simpath, 'obs', f'rdz{i}.npy')
     newfile = join(simpath, 'lightcone', f'hod{i:03}_aug{0:03}.h5')
     if (not isfile(newfile)) and isfile(oldfile):
         print(f'Converting lightcone {i}')
         convert_lightcone(i)
+
+# remove filtered and all else
 if del_old and os.path.isdir(join(simpath, 'obs')):
+    print('Deleting old obs')
     os.rmdir(join(simpath, 'obs'))
+    # shutil.rmtree(join(simpath, 'obs'))
+
+
+# convert power spectrum
+def convert_pk(i):
+    from cmass.summary.tools import save_summary
+    if isfile(join(simpath, 'Pk', f'Pk{i}.npz')):
+        pk = np.load(join(simpath, 'Pk', f'Pk{i}.npz'))
+        k_gal = pk['k_gal']
+        p0k_gal = pk['p0k_gal']
+        p2k_gal = pk['p2k_gal']
+        p4k_gal = pk['p4k_gal']
+
+        os.makedirs(join(simpath, 'summary'), exist_ok=True)
+        outname = f'hod{i:03}_aug{0:03}.h5'
+        outpath = join(simpath, 'summary', outname)
+        save_summary(
+            outpath, 'Pk',
+            k=k_gal, p0k=p0k_gal,
+            p2k=p2k_gal, p4k=p4k_gal)
+
+        if del_old:
+            print(f'Deleting old summary {i}')
+            os.remove(join(simpath, 'Pk', f'Pk{i}.npz'))
+
+
+for i in range(10):
+    oldfile = join(simpath, 'Pk', f'Pk{i}.npz')
+    newfile = join(simpath, 'summary', f'hod{i:03}_aug{0:03}.h5')
+    if (not isfile(newfile)) and isfile(oldfile):
+        print(f'Converting summary {i}')
+        convert_pk(i)
+
+if del_old and os.path.isdir(join(simpath, 'Pk')):
+    print('Deleting old Pk')
+    os.rmdir(join(simpath, 'Pk'))
+    # shutil.rmtree(join(simpath, 'Pk'))
