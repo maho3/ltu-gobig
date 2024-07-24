@@ -10,13 +10,30 @@
 
 module restore cmass
 source /data80/mattho/anaconda3/bin/activate
-conda activate cmass
+conda activate cmassrun
 
 cd /home/mattho/git/ltu-gobig/ltu-gobig/conversion
 
-SIMDIR=/automnt/data80/mattho/cmass-ili/2gpch_0704/borgpm/L2000-N256
+suite=quijote
+sim=nbody
+L=1000
+N=128
+SIMDIR=/automnt/data80/mattho/cmass-ili/${suite}/${sim}/L${L}-N${N}
 
-for i in $(seq 0 100 900); do
-    lhid=$(($i + $PBS_ARRAYID))
-    python convert_to_h5.py --suite=$SIMDIR --lhid=$lhid --del_old
-done
+# # FOR INDIVIDUAL RUNS
+# # lhid=$(($PBS_ARRAYID))
+lhid=0
+python convert_to_h5.py --suite=$SIMDIR --lhid=$lhid --del_old
+
+# # FOR ONLY LOOPING
+# for lhid in 1660 1652 1440 1443 1448 1541 1439 1545 1549; do
+#     echo "Converting $lhid"
+#     python convert_to_h5.py --suite=$SIMDIR --lhid=$lhid --del_old
+# done
+
+# FOR LOOPING AUGMENTATION
+# PBS_ARRAYID=3
+# for i in $(seq 0 100 1900); do
+#     lhid=$(($i + $PBS_ARRAYID))
+#     python convert_to_h5.py --suite=$SIMDIR --lhid=$lhid --del_old
+# done
