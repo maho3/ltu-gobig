@@ -19,8 +19,11 @@ def halos_to_cmass(rootdir, z, m_min, m_max, all_at_once = True):
 
         cat = CompaSOHaloCatalog(snapdir, cleaned = False, fields = ["N", "x_com","v_com"])
         MHsun = cat.header["ParticleMassHMsun"]
+        print(MHsun)
         N_min = int(m_min/MHsun)
+        print(N_min)
         N_max = int(m_max/MHsun)
+        print(N_max)
         cat = cat.halos[(cat.halos["N"]>=N_min) & (cat.halos["N"]<=N_max)]
 
         masses = cat["N"].data * MHsun
@@ -36,6 +39,7 @@ def halos_to_cmass(rootdir, z, m_min, m_max, all_at_once = True):
         for slab in slabs:
             cat = CompaSOHaloCatalog(snapdir+ "/" + slab, cleaned = False, fields = ["N", "x_com","v_com"])
             MHsun = cat.header["ParticleMassHMsun"]
+            print(MHsun)
             N_min = int(m_min/MHsun)
             N_max = int(m_max/MHsun)
             cat = cat.halos[(cat.halos["N"]>=N_min) & (cat.halos["N"]<=N_max)]
@@ -45,7 +49,7 @@ def halos_to_cmass(rootdir, z, m_min, m_max, all_at_once = True):
             vel = np.concatenate((vel,cat["v_com"].data))
 
     #assert z == cat.header["Redshift"]
-    return np.log10(masses*1e10), pos, vel*(1.0 + z)
+    return np.log10(masses), pos, vel*(1.0 + z)
 
 if __name__ == "__main__":
 

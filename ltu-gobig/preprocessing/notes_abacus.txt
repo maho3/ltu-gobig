@@ -1,0 +1,6 @@
+# I had some problems with the package abacusutils. In short, I made it work with trials and errors by forcefully instally asdf==2.13.
+
+# To run the preprocessing on Abacus Halo catalogs, run eg
+"python abacus.py Nth  path/to/AbacusSummit_base_cXXX_ph000/ 0.5 /path/to/output/ False
+"
+where Nth is the number of threads for abacusnbody, the input path must contain zX.XXX/halo_info/halo_info_xxx.asdf, the output path is simply the path to store the npy files and True/False is an argument wether to process all the  halo_info_xxx.asdf slabs at once by batches (for memory sake)
