@@ -22,7 +22,7 @@ def load_halos(source_dir, simnum, redshift):
     """
     # Parameters
     mass_type = 'rockstar_200c'
-    min_logM = 13.0
+    min_logM = np.log10(5e12)
 
     # Load the halo data
     z_dict = {0.0: 4, 0.5: 3, 1.0: 2, 2.0: 1, 3.0: 0}
@@ -62,14 +62,15 @@ def load_halos(source_dir, simnum, redshift):
     # Convert to physical units
     hmass = np.log10(hmass)  # Halo masses in log10(Msun/h)
     hvel *= (1.0 + redshift)  # Halo peculiar velocities in km/s
+    print(hmass.min())
 
     return hpos, hvel, hmass
 
 
 def main():
 
-    source_dir = '/automnt/data80/mattho/quijote/Halos/Rockstar/latin_hypercube_HR'
-    out_dir = '/data80/mattho/cmass-ili/quijote/nbody/L1000-N128'
+    source_dir = '/anvil/scratch/x-mho1/quijote/Halos/Rockstar/latin_hypercube_HR'
+    out_dir = '/anvil/scratch/x-mho1/cmass-ili/quijote/nbody/L1000-N128'
     redshift = 0.5
     a = 1/(1+redshift)
 
@@ -91,6 +92,7 @@ def main():
 
     hpos, hvel, hmass = load_halos(source_dir, lhid, redshift)
     save_snapshot(out_path, a, hpos=hpos, hvel=hvel, hmass=hmass)
+    print(f'saved to {out_path}')
 
 
 if __name__ == "__main__":

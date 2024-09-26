@@ -53,3 +53,7 @@ Thumbs.db
 
 # Other directories
 *.ipynb_checkpoints/
+
+# Custom
+*.jpg
+*.png
