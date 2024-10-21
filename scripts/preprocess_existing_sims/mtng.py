@@ -4,6 +4,8 @@ from os.path import join as pjoin
 import h5py
 from tqdm import tqdm
 
+from cmass.bias.apply_hod import save_snapshot
+
 
 def load_halos(source_dir, Mmin, zmin, zmax):
     """
@@ -18,9 +20,9 @@ def load_halos(source_dir, Mmin, zmin, zmax):
         :zmax (float): The maximum redshift to consider
         
     Returns:
-        :pos_h (np.ndarry): Halo positions in Mpc/h. Shape = (nhalos, 3).
-        :pos_v (np.ndarry): Halo peculiar velocities in km/s. Shape = (nhalos, 3).
-        :mass (np.ndarry): Halo masses in Msun/h. Shape = (nhalos,).
+        :gpos (np.ndarry): Halo positions in Mpc/h. Shape = (nhalos, 3).
+        :gvel (np.ndarry): Halo peculiar velocities in km/s. Shape = (nhalos, 3).
+        :res (dict): Dictionary of auxilary halo/galaxy properties
 
     Questions:
         * Do I need to apply redshift correction to velocity?
@@ -30,7 +32,9 @@ def load_halos(source_dir, Mmin, zmin, zmax):
     all_fname = os.listdir(source_dir)
     all_fname = [pjoin(source_dir, f) for f in all_fname]
     
-    res = {k:None for k in ['Pos', 'Vel', 'Mag', 'MagDust', 'ObsMag', 'ObsMagDust', 'StellarMass']}
+    res = {k:None for k in ['Mag', 'MagDust', 'ObsMag', 'ObsMagDust', 'StellarMass', 'Ascale']}
+    gpos = None
+    gvel = None
     all_mass = None
     
     for i in tqdm(range(len(all_fname))):
@@ -58,27 +62,44 @@ def load_halos(source_dir, Mmin, zmin, zmax):
             else:
                 all_mass = np.concatenate([all_mass, mass])
 
-    return res, all_mass
+            if gpos is None:
+                gpos = fin['Galaxies/Pos'][:][m]
+            else:
+                gpos = np.concatenate([gpos, fin['Galaxies/Pos'][:][m]])
+
+            if gvel is None:
+                gvel = fin['Galaxies/Vel'][:][m]
+            else:
+                gvel = np.concatenate([gvel, fin['Galaxies/Vel'][:][m]])
+
+    res['CentralMvir'] = all_mass
+
+    return gpos, gvel, res
 
 
 def main():
     
-    source_dir = '/home/mattho/data/mtng/GalaxyLightconeMTNG/galaxies_lightcone_01/'
-    out_dir = '/data101/bartlett/mtng/GalaxyLightconeMTNG/galaxies_lightcone_01/'
+    #source_dir = '/home/mattho/data/mtng/GalaxyLightconeMTNG/galaxies_lightcone_01/'
+    #out_dir = '/data101/bartlett/mtng/GalaxyLightconeMTNG/galaxies_lightcone_01/'
+
+    source_dir = '/anvil/projects/x-phy240043/x-adelgado1/galaxies_214/' 
+    out_dir = '/anvil/projects/x-phy240043/x-dbartlett/galaxies_214/'
+    outname = pjoin(out_dir, 'gal_snap_214.hdf5') 
+
     Mmin = 12.8
     zmin = 0.4
     zmax = 0.7
+
+    # What a to use as key when saving in hdf5 file
+    asave = 0.5
     
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir, exist_ok=True)
         
-    res, mass = load_halos(source_dir, Mmin, zmin, zmax)
-    np.save(pjoin(out_dir, 'halo_mass.npy'), mass)  # log10(halo masses [Msun/h])
-    for k in res.keys():
-        if k in ['Pos', 'Vel']:
-            np.save(pjoin(out_dir, f'halo_{k.lower()}.npy'), res[k])
-        else:
-            np.save(pjoin(out_dir, f'galaxy_{k.lower()}.npy'), res[k])
+    gpos, gvel, res = load_halos(source_dir, Mmin, zmin, zmax)
+    save_snapshot(outname, asave, gpos, gvel, **res)
     
+
 if __name__ == "__main__":
     main()
+
