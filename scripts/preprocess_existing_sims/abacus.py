@@ -62,7 +62,7 @@ def halos_to_cmass(rootdir, z, m_min, m_max, all_at_once=True):
         vel = np.concatenate(vel, axis=0)
 
         pos += 1000   # to avoid negative positions
-        pos %= 20000  # periodicity
+        pos %= 2000  # periodicity
         #     masses = np.concatenate((masses, cat["N"].data * MHsun), axis=0)
         #     pos = np.concatenate((pos, cat["x_com"].data), axis=0)
         #     vel = np.concatenate((vel, cat["v_com"].data), axis=0)
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     Nth = int(sys.argv[1])
     abacusnbody.data.asdf.set_nthreads(Nth)
 
-    m_min = 10**12.5
+    m_min = 5e12  # Charm minimum mass threshold
     m_max = 1e17
 
     in_dir = sys.argv[2]
