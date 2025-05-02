@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import sys
+import pandas as pd
 from tqdm import tqdm
 from os.path import join
 import abacusnbody.data.asdf
@@ -50,12 +51,16 @@ def halos_to_cmass(rootdir, z, m_min, m_max, all_at_once=True):
             # print(MHsun)
             N_min = int(m_min/MHsun)
             N_max = int(m_max/MHsun)
-            cat = cat.halos[(cat.halos["N"] >= N_min) &
-                            (cat.halos["N"] <= N_max)]
+            table = cat.halos[(cat.halos["N"] >= N_min) &
+                              (cat.halos["N"] <= N_max)]
 
-            masses.append(cat["N"].data * MHsun)
-            pos.append(cat["x_com"].data)
-            vel.append(cat["v_com"].data)
+            masses.append(table["N"].data * MHsun)
+            pos.append(table["x_com"].data)
+            vel.append(table["v_com"].data)
+
+        print('COSMOLOGY CHECK:')
+        for k in ['omega_b', 'omega_cdm', 'omega_ncdm']:
+            print(f'{k}: {cat.header[k]}')
 
         masses = np.concatenate(masses, axis=0)
         pos = np.concatenate(pos, axis=0)
@@ -82,10 +87,17 @@ if __name__ == "__main__":
     m_min = 5e12  # Charm minimum mass threshold
     m_max = 1e17
 
-    in_dir = sys.argv[2]
+    lhid = int(sys.argv[2])
+    # in_dir = sys.argv[2]
     my_z = float(sys.argv[3])
     out_dir = sys.argv[4]
     allslabs = int(sys.argv[5])
+
+    # load custom abacus table
+    table = pd.read_csv(
+        '/anvil/scratch/x-mho1/cmass-ili/scratch/abacus_custom_table.csv')
+    in_dir = join("/anvil/scratch/x-mho1/abacus/base",
+                  table['SimName'].values[lhid])
 
     massh, posh, velh = halos_to_cmass(
         in_dir, my_z, m_min, m_max, all_at_once=allslabs)
@@ -94,9 +106,3 @@ if __name__ == "__main__":
     if os.path.isfile(join(out_dir, 'halos.h5')):
         os.remove(join(out_dir, 'halos.h5'))
     save_snapshot(out_dir, a, posh, velh, massh)
-    # np.save(os.path.join(out_dir, 'halo_pos.npy'),
-    #         posh)  # halo comoving positions [Mpc/h]
-    # np.save(os.path.join(out_dir, 'halo_vel.npy'),
-    #         velh)  # halo physical velocities [km/s]
-    # np.save(os.path.join(out_dir, 'halo_mass.npy'),
-    #         massh)  # halo masses [Msun/h]
