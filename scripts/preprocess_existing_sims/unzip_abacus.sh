@@ -10,4 +10,4 @@
 
 cd /anvil/scratch/x-mho1/abacus/tmp
 
-tar -xvk -f z0.500_base_c000.tar
+tar -xv  --skip-old-files -f z0.500_base_c000.tar
