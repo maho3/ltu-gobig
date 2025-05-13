@@ -1,38 +1,32 @@
 #!/bin/bash
-#PBS -S /bin/sh
-#PBS -N abacus_halos
-#PBS -j oe
-#PBS -l nodes=1:ppn=16,walltime=02:00:00
+#SBATCH --job-name=abacus  # Job name
+#SBATCH --array=6-118  # Array range
+#SBATCH --nodes=1               # Number of nodes
+#SBATCH --ntasks=16            # Number of tasks
+#SBATCH --time=4:00:00         # Time limit
+#SBATCH --partition=shared  # Partition name
+#SBATCH --account=phy240043  # Account name
+#SBATCH --output=/anvil/scratch/x-mho1/jobout/%x_%A_%a.out  # Output file for each array task
+#SBATCH --error=/anvil/scratch/x-mho1/jobout/%x_%A_%a.out   # Error file for each array task
 
-#module purge
-source /home/chartier/myModules/abacus_halos/bin/activate
-#source /home/chartier/Modules/abacus_env/bin/activate
+
+# SLURM_ARRAY_TASK_ID=110
+
+# module purge
+module restore cmass
+conda activate cmass
 echo "Modules loaded successfully"
 
-export basePath="/home/mattho/data/abacus"
-export destPath="/data74/chartier/abacus"
-#export basePath="/home/chartier/Documents/LTU_ILI/iliData/abacus_test"
-#export destPath="/home/chartier/Documents/LTU_ILI/iliData/abacus_test"
-export z=0.5
-export threads=8
+basePath="/anvil/scratch/x-mho1/abacus/base"
+destPath="/anvil/scratch/x-mho1/cmass-ili/abacus/custom/L2000-N256"
+z=0.5
+threads=8
 
-cd /home/chartier/abacus_halos
+cd /home/x-mho1/git/ltu-gobig/scripts/preprocess_existing_sims
 #cd /home/chartier/Documents/LTU_ILI/iliData/abacus_test/ltu-gobig/ltu-gobig/preprocessing/
 
-# LOOP THROUGH THE LIST OF SEEDS # eg 130 to 181
-startSeed=130
-endSeed=130
-
-for k in $(seq $startSeed $endSeed)
-do
-    echo $k
-    echo $destPath/$k
-    mkdir -p $destPath/$k
-    echo "$basePath/AbacusSummit_base_c$k""_ph000"
-    python abacus.py $threads "$basePath/AbacusSummit_base_c$k""_ph000" $z "$destPath/$k" True
-
-    
-done
-
-exit 0
-
+lhid=$SLURM_ARRAY_TASK_ID
+echo $lhid
+echo $destPath/$lhid
+mkdir -p $destPath/$lhid
+python abacus.py $threads $lhid $z "$destPath/$lhid" 0

@@ -55,5 +55,6 @@ Thumbs.db
 *.ipynb_checkpoints/
 
 # Custom
-*.jpg
 *.png
+data
+*.jpg
