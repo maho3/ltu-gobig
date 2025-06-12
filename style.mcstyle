@@ -1,36 +1,51 @@
+# --- Figure and Savefig Options ---
 figure.figsize: 10,6
 figure.facecolor: white
 figure.dpi: 200
 
 savefig.dpi: 200
 savefig.bbox: tight
+savefig.edgecolor: white
+savefig.facecolor: white
 
-font.size: 14
-font.weight: 300
+# --- Font and Text Settings ---
+font.family: serif
+font.size: 10
+font.weight: normal
+mathtext.fontset: cm
+font.family: serif
 
+# --- Axes Settings ---
+axes.grid: False
+axes.linewidth: 1
 
-xtick.major.width: 1
-ytick.major.width: 1
-xtick.labelsize: small
-ytick.labelsize: small
+# --- Tick Settings ---
 xtick.top: True
 ytick.right: True
 xtick.direction: in
 ytick.direction: in
-xtick.minor.visible: True
-ytick.minor.visible: True
+xtick.major.width: 1
+ytick.major.width: 1
 xtick.major.size: 5
 ytick.major.size: 5
+xtick.minor.visible: True
+ytick.minor.visible: True
 xtick.minor.size: 3
 ytick.minor.size: 3
+xtick.labelsize: small
+ytick.labelsize: small
 
+# --- Legend Settings ---
 legend.fontsize: small
+legend.frameon: False
+legend.loc: best
 
+# --- Line and Image Settings ---
 lines.linewidth: 2
-
+lines.linestyle: solid
 image.origin: lower
 
-mathtext.fontset: cm
-
-savefig.edgecolor: white
-savefig.facecolor: white
+# --- File Format and Font Embedding ---
+pdf.fonttype: 42
+ps.fonttype: 42
+svg.fonttype: none
