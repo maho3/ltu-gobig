@@ -24,7 +24,7 @@ def find_all_summaries(nbody='quijotelike', sim='fastpm_varnoise', tracer='simbi
     return summaries
 
 
-def get_posterior_runner(savepath, nbody='quijotelike', sim='fastpm_varnoise', tracer='simbig_lightcone', summaries=['nbar', 'Pk0', 'Pk2', 'Pk4'],
+def get_posterior_runner(savepath, nbody='quijotelike', sim='fastpm_varnoise', tracer='simbig_lightcone', summary='nbar+Pk0+Pk2+Pk4+Qk0',
                 kmin=0.0, kmax=0.4):
     
     wdir = '/anvil/scratch/x-mho1/cmass-ili'
@@ -38,7 +38,6 @@ def get_posterior_runner(savepath, nbody='quijotelike', sim='fastpm_varnoise', t
 
     # Specify data dtype
     tracer = 'simbig_lightcone'
-    summary = '+'.join(summaries)
     modelpath = os.path.join(save_dir, tracer, summary, f'kmin-{kmin}_kmax-{kmax}')
     print(
         f'Loading model: nbody={nbody}, sim={sim}, tracer={tracer}, \n\tsummary={summary}, kmin={kmin}, kmax={kmax}')
@@ -181,7 +180,7 @@ def approximate_posterior(ind, samp0, par_names, outpath, transforms=3, hidden_f
         con_flow.load_state_dict(best_model_state)
         
     # Save the samples
-    np.savez(os.path.join(outpath, f'train_loss.npz'), train=all_train_loss, val=all_val_loss)
+    np.savez(os.path.join(outpath, f'train_loss_{ind}.npz'), train=all_train_loss, val=all_val_loss)
     
     return con_flow
 
@@ -200,18 +199,18 @@ def save_samples(ind, modelpath, outpath, con_flow, x0, y0, par_names, nsamp=500
 
 def main(ind):
     
-    savepath = '.'
+    savepath = '/anvil/scratch/x-dbartlett/cmass/quijotelike/condition_on_sigma'
     summaries = find_all_summaries()
 
     start = time.time()
     for summ in summaries:
         print(f'\nRunning summaries: {summ}')
-        modelpath, outpath, posterior, xtest, ytest, par_names = get_posterior_runner(savepath)
+        modelpath, outpath, posterior, xtest, ytest, par_names = get_posterior_runner(savepath, summary=summ)
         x0 = torch.Tensor(xtest[ind]).to(device)
         y0 = ytest[ind]
         uniform_priors = load_prior(modelpath)
-        samp0 = get_posterior_samples(posterior, uniform_priors, x0, par_names, nsamp=5000)
-        con_flow = approximate_posterior(ind, samp0, par_names, outpath)
+        samp0 = get_posterior_samples(posterior, uniform_priors, x0, par_names, nsamp=5_000)
+        con_flow = approximate_posterior(ind, samp0, par_names, outpath, hidden_features=(64, 64))
         save_samples(ind, modelpath, outpath, con_flow, x0, y0, par_names, nsamp=5000)
     end = time.time()
     print(f'\nTotal time to run all summaries: {int(end - start)}s')
