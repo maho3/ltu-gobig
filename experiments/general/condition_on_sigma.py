@@ -4,16 +4,27 @@ import numpy as np
 import torch
 import zuko
 from tqdm import tqdm
-import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, TensorDataset
 import csv
 from copy import deepcopy
+import argparse
+import time
 
 from tools import torch_device
 device = torch_device()
 
 
-def get_posterior_runner(nbody='quijotelike', sim='fastpm_varnoise', tracer='simbig_lightcone', summaries=['nbar', 'Pk0', 'Pk2', 'Pk4'],
+def find_all_summaries(nbody='quijotelike', sim='fastpm_varnoise', tracer='simbig_lightcone'):
+    
+    wdir = '/anvil/scratch/x-mho1/cmass-ili'
+    save_dir = os.path.join(wdir, nbody, sim, 'models', tracer)
+    summaries = os.listdir(save_dir)
+    summaries.sort()
+    
+    return summaries
+
+
+def get_posterior_runner(savepath, nbody='quijotelike', sim='fastpm_varnoise', tracer='simbig_lightcone', summaries=['nbar', 'Pk0', 'Pk2', 'Pk4'],
                 kmin=0.0, kmax=0.4):
     
     wdir = '/anvil/scratch/x-mho1/cmass-ili'
@@ -54,7 +65,12 @@ def get_posterior_runner(nbody='quijotelike', sim='fastpm_varnoise', tracer='sim
     }
     par_names = [name_dict[n] for n in names]
     
-    return modelpath, posterior, xtest, ytest, par_names
+    parts = os.path.normpath(modelpath).split(os.sep)
+    outpath = os.path.join(savepath, parts[-2], parts[-1])
+    if not os.path.isdir(outpath):
+        os.makedirs(outpath)
+    
+    return modelpath, outpath, posterior, xtest, ytest, par_names
 
 
 def load_prior(modelpath):
@@ -95,7 +111,7 @@ def get_posterior_samples(posterior, uniform_priors, x0, par_names, nsamp=2000):
     return samp0
 
 
-def approximate_posterior(samp0, par_names, transforms=3, hidden_features=(64, 64), train_frac=0.8, lr=1e-3, nepoch=500,
+def approximate_posterior(ind, samp0, par_names, outpath, transforms=3, hidden_features=(64, 64), train_frac=0.8, lr=1e-3, nepoch=500,
                          patience=50, min_delta=1e-4, scheduler_patience=20, scheduler_factor=0.5, min_lr=1e-6):
     
     best_val_loss = float('inf')
@@ -126,6 +142,7 @@ def approximate_posterior(samp0, par_names, transforms=3, hidden_features=(64, 6
     all_train_loss = []
     all_val_loss = []
 
+    print('Approximating conditional posterior')
     for epoch in tqdm(range(nepoch)):
         con_flow.train()
         for x, c in train_loader:
@@ -161,54 +178,50 @@ def approximate_posterior(samp0, par_names, transforms=3, hidden_features=(64, 6
 
     # Load best model
     if best_model_state is not None:
-        print('Loading state')
         con_flow.load_state_dict(best_model_state)
-
-    plt.plot(all_train_loss, label='Training')
-    plt.plot(all_val_loss, label='Validation')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig('train_loss.png')
-    plt.clf()
-    plt.close(plt.gcf())
+        
+    # Save the samples
+    np.savez(os.path.join(outpath, f'train_loss.npz'), train=all_train_loss, val=all_val_loss)
     
     return con_flow
 
 
-def save_samples(ind, savepath, modelpath, con_flow, x0, y0, par_names, nsamp=5000):
+def save_samples(ind, modelpath, outpath, con_flow, x0, y0, par_names, nsamp=5000):
     
     m = np.array([p in ['sigma_radial', 'sigma_tangential'] for p in par_names], dtype=bool)
     c = torch.Tensor(y0[m])
     samp = con_flow(c).sample((nsamp,))
     
-    parts = os.path.normpath(modelpath).split(os.sep)
-    outname = os.path.join(savepath, parts[-2], parts[-1])
-    if not os.path.isdir(outname):
-        os.makedirs(outname)
-    outname = os.path.join(outname, f'samples_{ind}.npy')
-    np.save(outname, samp)
+    outname = os.path.join(outpath, f'samples_{ind}.npz')
+    np.savez(outname, samples=samp, x0=x0, y0=y0)
     
     return
 
 
-def main():
-    
-    ind = 0
+def main(ind):
     
     savepath = '.'
-    modelpath, posterior, xtest, ytest, par_names = get_posterior_runner()
-    x0 = torch.Tensor(xtest[ind]).to(device)
-    y0 = ytest[ind]
-    uniform_priors = load_prior(modelpath)
-    samp0 = get_posterior_samples(posterior, uniform_priors, x0, par_names, nsamp=2000)
-    con_flow = approximate_posterior(samp0, par_names)
-    save_samples(ind, savepath, modelpath, con_flow, x0, y0, par_names)
+    summaries = find_all_summaries()
+
+    start = time.time()
+    for summ in summaries:
+        print(f'\nRunning summaries: {summ}')
+        modelpath, outpath, posterior, xtest, ytest, par_names = get_posterior_runner(savepath)
+        x0 = torch.Tensor(xtest[ind]).to(device)
+        y0 = ytest[ind]
+        uniform_priors = load_prior(modelpath)
+        samp0 = get_posterior_samples(posterior, uniform_priors, x0, par_names, nsamp=5000)
+        con_flow = approximate_posterior(ind, samp0, par_names, outpath)
+        save_samples(ind, modelpath, outpath, con_flow, x0, y0, par_names, nsamp=5000)
+    end = time.time()
+    print(f'\nTotal time to run all summaries: {int(end - start)}s')
                           
     return
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Condition posterior for tests on sigma values")
+    parser.add_argument("ind", help="Index of test to use", type=int)
+    args = parser.parse_args()
+    main(args.ind)
     
