@@ -24,5 +24,6 @@ end=$((start + 4))
 # Loop over 5 iterations
 for ((i=start; i<=end; i++)); do
     echo "Running iteration $i on SLURM_ARRAY_TASK_ID=$SLURM_ARRAY_TASK_ID"
-    python3 condition_on_sigma.py $i
+    # python3 condition_on_sigma.py ind=$i nbody=quijotelike sim=fastpm_varnoise
+    python3 condition_on_sigma.py --ind $i --test_nbody quijote --test_sim varnoise --sim fastpm_recnoise
 done
