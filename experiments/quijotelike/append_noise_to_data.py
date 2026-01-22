@@ -2,7 +2,7 @@ import numpy as np
 import os
 
 old_dir = '/anvil/scratch/x-mho1/cmass-ili/quijote/nbody_nonoise/models/galaxy'
-new_dir = '/anvil/scratch/x-dbartlett/cmass/quijote/nbody_nonoise_appended/galaxy'
+new_dir = '/anvil/scratch/x-dbartlett/cmass/quijote/nbody_nonoise_appended/models/galaxy'
 base_summary = 'nbar+zPk0'
 seed = 12345
 
